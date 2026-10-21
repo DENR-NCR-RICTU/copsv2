@@ -1,0 +1,697 @@
+{% extends 'includes/base.html' %}
+{% load static %}
+
+{% block title %}Edit Application - Permit to Import Chainsaw{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <!-- Header with Logo and Title -->
+    <div class="text-center mb-4">
+        <img src="{% static 'images/denr-logo.png' %}" alt="DENR Logo" style="height: 90px;">
+        <h4 class="mt-2 fw-bold text-uppercase text-success">Department of Environment and Natural Resources</h4>
+        <h5 class="text-muted">National Capital Region</h5>
+        <hr class="mt-4">
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body px-4 py-5">
+
+            <!-- Title -->
+            <div style="text-align: center;">
+                <h4 class="text-center text-primary mb-4 fw-semibold">Edit {{ permit_type }}</h4>
+                Permit No. <span class="text-muted">{{ application.reference_no }}</span>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4" id="formTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#form-section" type="button" role="tab">
+                        Application Form
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments-section" type="button" role="tab">
+                        Attachments
+                    </button>
+                </li>
+            </ul>
+
+            <form id="editChainsawForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="tab-content" id="formTabsContent">
+                    <!-- Application Form Tab -->
+                    <div class="tab-pane fade show active" id="form-section" role="tabpanel">
+                        <div class="mb-4">
+                            <div class="hr-sect">Application Information</div>
+                            <div class="row">
+
+                                <div class="col-md-2">
+                                    <label for="application_type" class="form-label">Application Type</label>
+                                </div>
+                                <div class="col-md-1">
+                                    :
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="col-md-9">
+                                        <select name="is_existing_permittee" id="is_existing_permittee" class="form-select" required>
+                                            <option value="" disabled {% if application.is_existing_permittee == None %}selected{% endif %}>-- Select --</option>
+                                            <option value="0" {% if application.is_existing_permittee == 0 %}selected{% endif %}>New Permittee</option>
+                                            <option value="1" {% if application.is_existing_permittee == 1 %}selected{% endif %}>Existing Permittee</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label for="date_applied" class="form-label">Date Applied</label>
+                                </div>
+                                <div class="col-md-1">
+                                    :
+                                </div>
+                                <div class="col-md-3">
+                                    {{ application.date_applied|date:"F j, Y" }}
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label for="applicant_type" class="form-label">Applicant Type</label>
+                                </div>
+                                <div class="col-md-1">
+                                    :
+                                </div>
+                                <div class="col-md-3">
+                                    {{ applicant_type }}
+                                </div>
+
+                                <div id="ownershsip_type"></div>
+
+                                <div class="col-md-2">
+                                    <label for="client_cel_no" class="form-label">Contact No</label>
+                                </div>
+                                <div class="col-md-1">
+                                    :
+                                </div>
+                                <div class="col-md-3">
+                                    {{ client_contact }}
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label for="applicant_name" class="form-label">Applicant Name</label>
+                                </div>
+                                <div class="col-md-1">
+                                    :
+                                </div>
+                                <div class="col-md-3">
+                                    {{ client_name }}
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label for="client_email" class="form-label">Email</label>
+                                </div>
+                                <div class="col-md-1">
+                                    :
+                                </div>
+                                <div class="col-md-3">
+                                    {{ client_email }}
+                                </div>
+
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="hr-sect">General Information</div>
+                                <div class="col-sm-12">
+                                    <p style='color:red'><i>*** Information below will be shown in the permit applied.</i></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+
+                        <!-- Permittee Name -->
+                        <div class="mb-4">
+                            <label for="establishment" class="form-label">Permittee Name <span class="text-danger">*</span></label>
+                           
+                            <select id="establishment" name="estab_id_dniis" class="form-select">
+                                <option value="" disabled>-- Select Permittee Name --</option>
+                                {% for bl in business_list %}
+                                    <option value="{{ bl.id }}"
+                                        data-address="{% if bl.biz_lgu %}{{ bl.biz_address }}, {{ bl.barangay }} {% if bl.sub_lgu == bl.lgu %}{{ bl.sub_lgu }}{% else %}{{ bl.sub_lgu }} {{ bl.lgu }}{% endif %}{% else %}{{ bl.biz_address }}{% endif %}"
+                                        data-email="{{ bl.email_biz }}"
+                                        data-contact="{{ bl.cel_no_biz }} / {{ bl.tel_no_biz }}"
+                                        data-name="{{ bl.business_name }}"
+                                        {% if bl.id|stringformat:"s" == application.estab_id_dniis|stringformat:"s" %}selected{% endif %}>
+                                        {{ bl.business_name }}
+                                    </option>
+                                {% endfor %}
+
+                            </select>
+                            <div class="invalid-feedback">Please select a Permittee Name.</div>
+                        </div>
+                        <input type="hidden" id="estab_name" name="estab_name" value="{{ application.estab_name }}">
+
+                        <div class="mb-3 mt-3">
+                            <label class="form-label">Address</label>
+                            <input type="text" id="estab_address" name="estab_address" class="form-control" readonly value="{{ application.estab_address }}">
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="text" id="estab_email" name="estab_email" class="form-control" readonly value="{{ application.estab_email }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contact No.</label>
+                                <input type="text" id="estab_contact" name="estab_contact" class="form-control" readonly value="{{ application.estab_contact }}">
+                            </div>
+                        </div>
+
+                        <label class="form-label">Office / Warehouse Address <span class="text-danger">*</span></label>
+                        <small class="text-muted d-block mb-2">Click "Add More" to list multiple warehouses. <i class="text-danger">*</i> Address must be within NCR.</small>
+
+                        <div id="warehouse-address-list">
+                            {% for warehouse in application.warehouses.all %}
+                            <div class="row mb-3 warehouse-address-item">
+                                <div class="col-md-2">
+                                    <select name="warehouse_city[]" class="form-control" required>
+                                        <option value="" disabled>-- Select City --</option>
+                                        {% for city in ncr_cities %}
+                                            <option value="{{ city }}" {% if warehouse.city == city %}selected{% endif %}>{{ city }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">Please select a City or Municipality.</div>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="text" name="warehouse_address[]" class="form-control" placeholder="Office / Warehouse Address" value="{{ warehouse.address }}" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-outline-danger w-100 remove-warehouse-row">Remove</button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <button type="button" id="add-warehouse-row" class="btn btn-outline-secondary btn-sm mt-2">+ Add More</button>
+
+                        <div class="hr-sect">Chainsaw Details</div>
+                        <div class="mb-4">
+                            <label for="brand" class="form-label">Brand <span class="text-danger">*</span></label>
+                            <select id="brand" name="brand" class="form-select">
+                                <option value="" disabled>-- Select Brand --</option>
+                                {% for brand in brands %}
+                                    <option value="{{ brand.id }}" {% if application.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Please select a brand.</div>
+                        </div>
+
+                        <!-- Dynamic Model/Quantity Rows -->
+                        <div class="mb-4">
+                            <label class="form-label">Model & Quantity <span class="text-danger">*</span></label>
+                            <small class="text-muted d-block mb-2">Click "Add More" to list multiple models.</small>
+                            <div id="model-quantity-list">
+                                {% for item in ch_details %}
+                                <div class="row g-2 mb-2 model-quantity-item">
+                                    <div class="col-md-6">
+                                        <select name="model[]" class="form-select model-dropdown" data-selected="{{ item.model }}" required>
+                                            <option value="">-- Select Model --</option>
+                                            <!-- Options will be loaded by JavaScript -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="number" name="quantity[]" class="form-control" placeholder="Quantity" min="1" value="{{ item.quantity }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-outline-danger w-100 remove-row">Remove</button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" id="add-row" class="btn btn-outline-secondary btn-sm mt-2">+ Add More</button>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="origin" class="form-label">Country of Origin<span class="text-danger">*</span></label>
+                            <input type="text" id="origin" name="origin" class="form-control" value="{{ application.origin }}">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="supplier" class="form-label">Supplier<span class="text-danger">*</span></label>
+                            <input type="text" id="supplier" name="supplier" class="form-control" value="{{ application.supplier }}">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="address" class="form-label">Supplier Address<span class="text-danger">*</span></label>
+                            <input type="text" id="address" name="address" class="form-control" value="{{ application.address }}">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="arrival_date" class="form-label">Expected Time of Arrival <span class="text-danger">*</span></label>
+                            <input type="date" id="arrival_date" name="arrival_date" class="form-control" value="{{ application.arrival_date|date:'Y-m-d' }}">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="purpose" class="form-label">Purpose <span class="text-danger">*</span></label>
+                            <select id="purpose" name="purpose" class="form-select">
+                                <option value="" disabled>-- Select Purpose --</option>
+                                <option value="Distribution/Sale" {% if application.purpose == "Distribution/Sale" %}selected{% endif %}>Distribution / Sale</option>
+                                <option value="Personal/Legal Use" {% if application.purpose == "Personal/Legal Use" %}selected{% endif %}>Personal / Legal Use</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a purpose.</div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="attachments-section" role="tabpanel">
+
+                        <!-- Purchase Order -->
+                        <div class="mb-4">
+                            <label class="form-label">Purchase Order</label>
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>File</th>
+                                        <th style="width: 150px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in attachments %}
+                                        {% if att.file_type  == "purchase_order" %}
+                                            <tr>
+                                                <td><a href="{{ att.file_url  }}" target="_blank">{{ att.file_name }}</a></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="text-danger medium">Remove</span>
+                                                        <input type="checkbox" name="delete_attachments" value="{{ att.id }}">
+                                                        
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <input type="file" name="purchase_order" class="form-control" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                            <small class="text-muted">Leave blank to keep existing file.</small>
+                        </div>
+
+                        <!-- Affidavit -->
+                        {% if request.session.app_type == "1" or request.session.app_type == "2" %}
+                        <div class="mb-4">
+                            <label class="form-label">Affidavit</label>
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>File</th>
+                                        <th style="width: 150px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in attachments %}
+                                        {% if att.file_type  == "affidavit" %}
+                                            <tr>
+                                                <td><a href="{{ att.file_url  }}" target="_blank">{{ att.file_name }}</a></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="text-danger medium">Remove</span>
+                                                        <input type="checkbox" name="delete_attachments" value="{{ att.id }}">
+                                                        
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <input type="file" name="affidavit" class="form-control" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                            <small class="text-muted">Leave blank to keep existing file.</small>
+                        </div>
+                        {% endif %}
+
+                        <!-- DTI/SEC -->
+                        {% if request.session.app_type == "3" %}
+                        <div class="mb-4">
+                            <label class="form-label">Business Name Registration (DTI/SEC)</label>
+                            <table class="table table-bordered table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>File</th>
+                                        <th style="width: 150px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for att in attachments %}
+                                        {% if att.file_type  == "dti_sec" %}
+                                            <tr>
+                                                <td><a href="{{ att.file_url  }}" target="_blank">{{ att.file_name }}</a></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="text-danger medium">Remove</span>
+                                                        <input type="checkbox" name="delete_attachments" value="{{ att.id }}">
+                                                        
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <input type="file" name="dti_sec" class="form-control" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                            <small class="text-muted">Leave blank to keep existing file.</small>
+                        </div>
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-end mt-4">
+                    <textarea class="form-control" id="remarksTextarea" name="remarks" rows="4" placeholder="Enter your remarks here. If resubmitting, please indicate any necessary information."></textarea>
+                    <br>
+                    <button type="submit" class="btn btn-primary px-4">Update Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    
+    $(document).ready(function () {
+        function loadModels(brandId, dropdown, selectedModel = '') {
+            if (!brandId) return;
+
+            $.ajax({
+                url: '{% url "get_chainsaw_models" %}',
+                data: { brand_id: brandId },
+                success: function (data) {
+                    dropdown.empty().append('<option value="">-- Select Model --</option>');
+                    data.models.forEach(function (model) {
+                        const isSelected = String(model.name) === String(selectedModel) ? 'selected' : '';
+                        dropdown.append(`<option value="${model.name}" ${isSelected}>${model.name}</option>`);
+                    });
+                }
+            });
+        }
+
+        const currentBrand = $('#brand').val();
+
+        // Populate dropdowns on page load (edit)
+        // $('#model-quantity-list .model-dropdown').each(function () {
+        //     const selectedModel = $(this).data('selected');
+        //     loadModels(currentBrand, $(this), selectedModel);
+        // });
+
+        $('#model-quantity-list .model-dropdown').each(function () {
+            const selectedModel = $(this).data('selected');
+            const brandId = $('#brand').val(); // or $(this).closest('.row').find('.brand-dropdown').val()
+            loadModels(brandId, $(this), selectedModel);
+        });
+
+        // Handle brand change
+        $('#brand').on('change', function () {
+            const brand = $(this).val();
+            $('#model-quantity-list .model-dropdown').each(function () {
+                loadModels(brand, $(this));
+            });
+        });
+
+        // Add new row model
+        $('#add-row').on('click', function () {
+            const newRow = `
+                <div class="row g-2 mb-2 model-quantity-item">
+                    <div class="col-md-6">
+                        <select name="model[]" class="form-select model-dropdown" required>
+                            <option value="">-- Select Model --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="number" name="quantity[]" class="form-control" placeholder="Quantity" min="1">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger w-100 remove-row">Remove</button>
+                    </div>
+                </div>`;
+            $('#model-quantity-list').append(newRow);
+            loadModels($('#brand').val(), $('#model-quantity-list .model-dropdown').last());
+        });
+
+        // Remove row model
+        $(document).on('click', '.remove-row', function () {
+            $(this).closest('.model-quantity-item').remove();
+        });
+
+        // Add new row warehouse
+        $('#add-warehouse-row').on('click', function () {
+            const newWarehouseRow = `
+                <div class="row mb-3 warehouse-address-item">
+                    <div class="col-md-2">
+                        <select name="warehouse_city[]" class="form-control" required>
+                            <option value="" disabled selected>-- Select City --</option>
+                            {% for city in ncr_cities %}
+                                <option value="{{ city }}">{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a City or Municipality.</div>
+                    </div>
+                    <div class="col-md-8">
+                        <input type="text" name="warehouse_address[]" class="form-control" placeholder="Office / Warehouse Address" required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger w-100 remove-warehouse-row">Remove</button>
+                    </div>
+                </div>`;
+            $('#warehouse-address-list').append(newWarehouseRow);
+        });
+
+        $(document).on('click', '.remove-warehouse-row', function () {
+            $(this).closest('.warehouse-address-item').remove();
+        });
+    });
+
+
+    {% comment %} document.getElementById('add-row').addEventListener('click', function () {
+        const container = document.getElementById('model-quantity-list');
+        const newRow = document.createElement('div');
+        newRow.className = 'row g-2 mb-2 model-quantity-item';
+        newRow.innerHTML = `
+            <div class="col-md-6">
+                <input type="text" name="model[]" class="form-control" placeholder="Model">
+            </div>
+            <div class="col-md-4">
+                <input type="number" name="quantity[]" class="form-control" placeholder="Quantity" min="1">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger w-100 remove-row">Remove</button>
+            </div>
+        `;
+        container.appendChild(newRow);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('.model-quantity-item').remove();
+        }
+    }); {% endcomment %}
+
+    $('#establishment').on('change', function () {
+        const selected = $(this).find(':selected');
+
+        // Get data from selected option
+        const address = selected.data('address') || '';
+        const email = selected.data('email') || '';
+        const contact = selected.data('contact') || '';
+        const name = selected.data('name') || '';
+
+        // Set the values
+        $('#estab_address').val(address);
+        $('#estab_email').val(email);
+        $('#estab_contact').val(contact);
+        $('#estab_name').val(name);
+    });
+
+    $(document).on('submit', '#editChainsawForm', function (e) {
+        e.preventDefault();
+        
+        const remarks = $('#remarksTextarea').val().trim();
+
+        if (!remarks) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Remarks Required',
+                text: 'Please provide remarks before resubmitting the application.'
+            });
+            return;
+        }
+
+        // Clear previous error styles
+        $('#editChainsawForm input, #editChainsawForm select').removeClass('is-invalid');
+
+        let hasError = false;
+        let firstErrorTab = null;
+
+        if (!$('#is_existing_permittee').val()) {
+            $('#is_existing_permittee').addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        if (!$('#establishment').val()) {
+            $('#establishment').addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        // Validate Brand dropdown
+        if (!$('#brand').val()) {
+            $('#brand').addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        // Validate Purpose dropdown
+        if (!$('#purpose').val()) {
+            $('#purpose').addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        // Validate Origin
+        const origin = $('#origin');
+        if (!origin.val().trim()) {
+            origin.addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        // Added Supplier & Address Validations
+        // Validate Supplier
+        const supplier = $('#supplier');
+        if (!supplier.val().trim()) {
+            supplier.addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        // Validate Address
+        const address = $('#address');
+        if (!address.val().trim()) {
+            address.addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }        
+
+        const arrival_date = $('#arrival_date');
+        if (!arrival_date.val().trim()) {
+            arrival_date.addClass('is-invalid');
+            hasError = true;
+            firstErrorTab = 'form-section';
+        }
+
+        $('#warehouse-address-list .warehouse-address-item').each(function () {
+            const city = $(this).find('select[name="warehouse_city[]"]');
+            const address = $(this).find('input[name="warehouse_address[]"]');
+
+            if (!city.val()) {
+                city.addClass('is-invalid');
+                hasError = true;
+                firstErrorTab = 'form-section'; // or the tab id where warehouse address is located
+            } else {
+                city.removeClass('is-invalid');
+            }
+
+            if (!address.val().trim()) {
+                address.addClass('is-invalid');
+                hasError = true;
+                firstErrorTab = 'form-section'; // or the tab id where warehouse address is located
+            } else {
+                address.removeClass('is-invalid');
+            }
+        });
+        
+
+        // Validate Model and Quantity rows
+        $('#model-quantity-list .model-quantity-item').each(function () {
+            const model = $(this).find('select[name="model[]"]'); // changed from input to select
+            const qty = $(this).find('input[name="quantity[]"]');
+
+            if (!model.val()) {
+                model.addClass('is-invalid');
+                hasError = true;
+                firstErrorTab = 'form-section';
+            } else {
+                model.removeClass('is-invalid');
+            }
+
+            if (!qty.val() || parseInt(qty.val()) < 1) {
+                qty.addClass('is-invalid');
+                hasError = true;
+                firstErrorTab = 'form-section';
+            } else {
+                qty.removeClass('is-invalid');
+            }
+        });
+
+
+        // If there's an error, switch to the tab
+        if (hasError) {
+            $(`#formTabs button[data-bs-target="#${firstErrorTab}"]`).tab('show');
+            return;
+        }
+
+        Swal.fire({
+            title: "Confirm Submission",
+            text: "Are you sure you want to submit this application?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#198754",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, submit it"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let form = $('#editChainsawForm')[0];  // adjust selector
+                let formData = new FormData(form);
+
+                $.ajax({
+                    url: form.action,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Success",
+                                text: response.message,
+                            }).then(() => {
+                                window.location.href = "/myapplications/";
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Submission Failed",
+                                text: response.message || "Something went wrong.",
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    window.location.href = "/myapplications/"; // Redirect on Application List
+                                }
+                            });
+                        }
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Server Error",
+                            text: "An error occurred. Please try again later.",
+                        });
+                    }
+                });
+            }
+        });
+
+    });
+</script>
+{% endblock %}
